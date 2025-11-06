@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Venir differemment</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    input, button, select {
+      padding: 15px 20px;
+      margin: 10px 0;
+      font-size: 16px;
+      border-radius: 12px;
+      border: none;
+      width: 100%;
+    }
+    input, select {
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    button:hover { background: #45a049; }
+    button:disabled { background: #cccccc; cursor: not-allowed; }
+    .step {
+      display: none;
+    }
+    .step.active {
+      display: block;
+    }
+    .qrcode-container {
+      text-align: center;
+      margin: 20px 0;
+    }
+    #qrcode, #inviteQrcode, #qrcodeStep3 {
+      display: inline-block;
+      background: white;
+      padding: 10px;
+      border-radius: 12px;
+      min-height: 200px;
+      min-width: 200px;
+    }
+    .participant-card {
+      background: rgba(255, 255, 255, 0.2);
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 12px;
+      border-left: 4px solid #4CAF50;
+    }
+    .participant-card.target {
+      border-left: 4px solid #ffd700;
+      background: rgba(255, 215, 0, 0.2);
+    }
+    .participant-card.scanned {
+      border-left: 4px solid #4CAF50;
+      background: rgba(76, 175, 80, 0.3);
+    }
+    .distance-badge {
+      background: #ffd700;
+      color: #333;
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      float: right;
+    }
+    .question-bubble {
+      background: rgba(76, 175, 80, 0.3);
+      border: 2px solid #4CAF50;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 15px 0;
+      text-align: center;
+    }
+    .challenge-bubble {
+      background: rgba(156, 39, 176, 0.3);
+      border: 2px solid #9C27B0;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 15px 0;
+      text-align: center;
+    }
+    .challenge-title {
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+    }
+    .challenge-task {
+      font-size: 1.1rem;
+      margin: 15px 0;
+    }
+    .scan-animation {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    .progress-bar {
+      height: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+    .progress {
+      height: 100%;
+      background: #4CAF50;
+      transition: width 0.3s ease;
+    }
+    h2 { text-align: center; margin-bottom: 20px; }
+    .step-indicator {
+      display: flex;
+      justify-content: space-between;
+      margin: 20px 0;
+    }
+    .step-dot {
+      width: 12px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+    }
+    .step-dot.active {
+      background: #4CAF50;
+    }
+    .error-message {
+      background: rgba(255, 0, 0, 0.2);
+      border: 1px solid red;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+      display: none;
+    }
+    .success-message {
+      background: rgba(76, 175, 80, 0.2);
+      border: 1px solid #4CAF50;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+      display: none;
+    }
+    .navigation-buttons {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .navigation-buttons button {
+      flex: 1;
+    }
+    .address-preview {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-size: 0.9em;
+    }
+    .game-stats {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 15px;
+      border-radius: 12px;
+      margin: 15px 0;
+      text-align: center;
+    }
+    .score-badge {
+      background: linear-gradient(45deg, #FFD700, #FFA500);
+      color: #333;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin: 10px 0;
+      display: inline-block;
+    }
+    .attempts-counter {
+      font-size: 1.1rem;
+      margin: 10px 0;
+    }
+    .target-list {
+      margin: 20px 0;
+    }
+    .game-instructions {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 12px;
+      margin: 15px 0;
+    }
+    .continue-btn {
+      background: #2196F3;
+      margin-top: 10px;
+    }
+    .continue-btn:disabled {
+      background: #cccccc;
+    }
+    .completed-message {
+      color: #4CAF50;
+      font-weight: bold;
+      text-align: center;
+      margin: 10px 0;
+    }
+    .distance-info {
+      background: rgba(255, 215, 0, 0.2);
+      border: 1px solid #ffd700;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+      text-align: center;
+      font-weight: bold;
+    }
+    .invite-section {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .invite-btn {
+      background: #9C27B0;
+    }
+    .invite-btn:hover {
+      background: #7B1FA2;
+    }
+    .camera-view {
+      display: none;
+      text-align: center;
+    }
+    .camera-view.active {
+      display: block;
+    }
+    .camera-container {
+      position: relative;
+      margin: 20px 0;
+    }
+    #video, #gameVideo, #simpleVideo {
+      width: 100%;
+      max-width: 300px;
+      border-radius: 12px;
+      background: #000;
+    }
+    .camera-controls {
+      margin: 15px 0;
+    }
+    .simple-scan-btn {
+      background: #FF9800;
+    }
+    .simple-scan-btn:hover {
+      background: #F57C00;
+    }
+    #inviteQrcode {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto;
+      width: fit-content;
+    }
+    .invite-timer {
+      text-align: center;
+      font-size: 1.3rem;
+      margin: 15px 0;
+      padding: 10px;
+      background: rgba(255, 152, 0, 0.2);
+      border-radius: 12px;
+      color: #FF9800;
+      font-weight: bold;
+    }
+    .invite-label {
+      background: #9C27B0;
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: center;
+    }
+    
+    /* Styles admin */
+    .admin-section {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 12px;
+      margin: 15px 0;
+    }
+    .timer-controls {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0;
+      flex-wrap: wrap;
+    }
+    .admin-btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .admin-btn.start {
+      background: #4CAF50;
+      color: white;
+    }
+    .admin-btn.pause {
+      background: #FF9800;
+      color: white;
+    }
+    .admin-btn.reset {
+      background: #2196F3;
+      color: white;
+    }
+    .admin-btn.danger {
+      background: #f44336;
+      color: white;
+    }
+    .timer-status {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    .timer-settings {
+      margin: 15px 0;
+    }
+    .timer-settings label {
+      display: block;
+      margin: 10px 0 5px 0;
+      font-weight: bold;
+    }
+    .admin-floating-btn {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(156, 39, 176, 0.9);
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s;
+    }
+    .admin-floating-btn:hover {
+      transform: scale(1.1);
+      background: rgba(156, 39, 176, 1);
+    }
+    
+    /* Timer Phase 5 */
+    .timer-display {
+      text-align: center;
+      margin: 20px 0;
+    }
+    #currentTime {
+      font-size: 3rem;
+      font-weight: bold;
+      color: #FFD700;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .departure-info {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 15px;
+      border-radius: 12px;
+      margin: 15px 0;
+      text-align: center;
+    }
+    .status-box {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    .pelote-instructions {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 12px;
+      margin: 15px 0;
+    }
+    .pelote-instructions ul {
+      text-align: left;
+      margin: 10px 0;
+    }
+    .live-stats {
+      background: rgba(76, 175, 80, 0.2);
+      padding: 15px;
+      border-radius: 12px;
+      margin: 15px 0;
+    }
+    .positioning-instructions {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 12px;
+      margin: 15px 0;
+    }
+    .reference-item {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 10px;
+      border-radius: 8px;
+      margin: 5px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .positioning-stats {
+      background: rgba(76, 175, 80, 0.2);
+      padding: 10px;
+      border-radius: 8px;
+      margin: 15px 0;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Indicateur d'étapes -->
+    <div class="step-indicator">
+      <div class="step-dot active" id="step1Dot"></div>
+      <div class="step-dot" id="step2Dot"></div>
+      <div class="step-dot" id="step3Dot"></div>
+      <div class="step-dot" id="step4Dot"></div>
+      <div class="step-dot" id="step5Dot"></div>
+    </div>
+
+    <!-- Étape 1 : Configuration -->
+    <div id="step1" class="step active">
+      <img src="https://raw.githubusercontent.com/bourgineo-stack/Atelier-mobilit--code/a1efc93d3b6a3fbbf78b258f5368af23c0ee5492/logo1.jpg"
+       alt="Logo GoDifferent"
+       style="max-width: 200px; margin: 10px auto; display: block;border-radius: 15px;">
+      
+      <p>Commencez par indiquer votre localisation pour participer au jeu et générer votre code personnel.</p>
+
+      <input type="text" id="accessCodeInput" placeholder="Ex: 25" />
+      <button onclick="checkAccessCode()">Valider le code</button>
+
+      <div id="accessError" style="color: red; display: none; margin: 10px 0;">
+        ❌ Code d'accès invalide. Veuillez vérifier et réessayer.
+      </div>
+      
+      <div class="error-message" id="errorMessage"></div>
+      <div class="success-message" id="successMessage"></div>
+      
+      <div id="locationSection" style="display: none;">
+        <input id="userAddress" placeholder="📍 Entrez votre adresse complète" />
+        
+        <select id="transportMode">
+          <option value="">-- Votre mode de transport actuel --</option>
+          <option value="car-solo">🟡 Voiture seule</option>
+          <option value="carpool">🟨 Covoiturage</option>
+          <option value="bike">🔵 Vélo/Marche</option>
+          <option value="public">🌸 Transport en commun</option>
+        </select>
+        
+        <label style="display: block; margin: 10px 0; font-weight: bold;">⏰ Votre heure de départ habituelle :</label>
+        <input type="time" id="departureTime" value="07:30" />
+        
+        <button id="saveLocation">Valider ma localisation</button>
+      </div>
+
+      <div id="afterLocationSection" style="display: none;">
+        <div class="completed-message">
+          ✅ Localisation enregistrée
+        </div>
+        <div id="addressPreview" class="address-preview">
+          <strong>Adresse détectée :</strong> <span id="detectedAddress"></span>
+        </div>
+
+        <div class="invite-section">
+          <button class="invite-btn" onclick="showInvitePage()">📨 Inviter d'autres participants</button>
+        </div>
+
+        <div class="navigation-buttons">
+          <button onclick="showStep(2)">🎮 Débuter le jeu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Étape 2 : Rencontres & Challenges -->
+    <div id="step2" class="step">
+      <h2>🎯 Un max de rencontres !</h2>
+      <p>Scannez un maximum de personnes ! À chaque fois que vous trouvez quelqu'un proche de vous, un mini-challenge apparaît.</p>
+      
+      <div class="qrcode-container">
+        <p>C'est votre code. Trouvez les autres :</p>
+        <div id="qrcode"></div>
+      </div>
+
+      <div class="camera-view" id="cameraView">
+        <div class="camera-container">
+          <video id="video" autoplay playsinline muted></video>
+        </div>
+        <div class="camera-controls">
+          <button id="stopScanBtn" style="background: #ff6b6b;">🛑 Arrêter la caméra</button>
+        </div>
+      </div>
+
+      <div id="normalScanSection">
+        <button id="scanBtn" class="scan-animation">📱 Scanner un max de codes</button>
+        <div id="scanResult"></div>
+      </div>
+
+      <div id="challengeSection" style="display: none;">
+        <div class="challenge-bubble">
+          <div class="challenge-title" id="challengeTitle"></div>
+          <div class="challenge-task" id="challengeTask"></div>
+          <button id="continueChallengeBtn" class="continue-btn">✅ Challenge réalisé !</button>
+        </div>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress" id="step1Progress" style="width: 0%"></div>
+      </div>
+      <p>Personnes scannées : <span id="scanCount">0</span></p>
+
+      <div class="navigation-buttons">
+        <button onclick="showStep(1)">⬅️ Retour</button>
+        <button onclick="showStep(3)" id="goToStep3" disabled>🎮 Lancer le défi (Minimum: <span id="minParticipantsRequiredDisplay">20</span>)</button>
+      </div>
+    </div>
+
+    <!-- Étape 3 : Défi des voisins -->
+    <div id="step3" class="step">
+      <h2>🎮 Retrouvez vos voisins</h2>
+      
+      <div class="game-instructions">
+        <p><strong>Objectif :</strong> Scanner 3 de vos 5 voisins les plus proches</p>
+        <p><strong>Règles :</strong> 5 essais maximum - Vous pouvez rejouer si besoin !</p>
+      </div>
+      
+      <div class="qrcode-container">
+        <p>C'est votre code. Trouvez les autres :</p>
+        <div id="qrcodeStep3"></div>
+      </div>
+
+      <div class="game-stats">
+        <div class="score-badge" id="scoreBadge">Score: 0/3</div>
+        <div class="attempts-counter">Essais restants: <span id="attemptsLeft">5</span></div>
+        <div id="gameResult"></div>
+      </div>
+
+      <div class="target-list">
+        <h3>🎯 Vos 5 voisins les plus proches :</h3>
+        <div id="targetList"></div>
+      </div>
+
+      <div class="camera-view" id="gameCameraView">
+        <div class="camera-container">
+          <video id="gameVideo" autoplay playsinline muted></video>
+        </div>
+        <div class="camera-controls">
+          <button id="gameStopScanBtn" style="background: #ff6b6b;">🛑 Arrêter la caméra</button>
+        </div>
+      </div>
+
+      <div id="gameScanSection">
+        <button id="gameScanBtn" class="scan-animation">📱 Scanner un voisin</button>
+        <div id="gameScanResult"></div>
+      </div>
+
+      <div class="navigation-buttons">
+        <button onclick="showStep(2)">⬅️ Retour</button>
+        <button onclick="resetGame()" id="resetGameBtn" style="background: #ff9800;">🔄 2nde Chance</button>
+        <button onclick="showStep(4)">➡️ Positionnement sur la carte</button>
+      </div>
+    </div>
+
+    <!-- Étape 4 : Positionnement sur la carte -->
+    <div id="step4" class="step">
+      <h2>🗺️ Placez-vous sur la carte</h2>
+      
+      <div class="positioning-instructions">
+        <p>📍 Des QR codes sont disposés dans la salle</p>
+        <p>👥 Scannez-les (et/ou vos voisins) pour vous repérer</p>
+        <p>📐 Positionnez-vous approximativement selon les distances</p>
+      </div>
+      
+      <div id="referenceScans">
+        <h3>📏 Vos repères :</h3>
+        <div id="scansList"></div>
+      </div>
+      
+      <div class="camera-view" id="positioningCameraView">
+        <div class="camera-container">
+          <video id="positioningVideo" autoplay playsinline muted></video>
+        </div>
+        <div class="camera-controls">
+          <button id="positioningStopScanBtn" style="background: #ff6b6b;">🛑 Arrêter la caméra</button>
+        </div>
+      </div>
+      
+      <button id="positioningScanBtn" class="scan-animation">📱 Scanner un repère</button>
+      
+      <div class="positioning-stats">
+        <p>✅ <span id="positionedCount">0</span> personnes positionnées</p>
+      </div>
+      
+      <div class="navigation-buttons">
+        <button onclick="showStep(3)">⬅️ Retour</button>
+        <button onclick="showStep(5)" class="continue-btn">➡️ Je suis bien placé, continuer</button>
+      </div>
+    </div>
+
+    <!-- Étape 5 : Chronomètre collectif -->
+    <div id="step5" class="step">
+      <h2>🧶 Phase Pelotes de Laine</h2>
+      
+      <div class="timer-display">
+        <div id="currentTime">06:00</div>
+        <p>⏰ Heure virtuelle</p>
+      </div>
+      
+      <div class="departure-info">
+        <p>🏠 Votre départ habituel : <strong id="userDepartureDisplay">--:--</strong></p>
+        <div id="departureStatus" class="status-box">
+          🕐 Attendez votre tour...
+        </div>
+      </div>
+      
+      <div class="pelote-instructions">
+        <h3>📋 Instructions :</h3>
+        <ol>
+          <li>Prenez votre pelote selon votre mode :
+            <ul>
+              <li>🟡 Jaune foncé = Voiture solo</li>
+              <li>🟨 Jaune pâle = Covoiturage</li>
+              <li>🔵 Bleu = Vélo/Marche</li>
+              <li>🌸 Rose = Transport en commun</li>
+            </ul>
+          </li>
+          <li>Quand l'heure affichée correspond à votre départ, partez vers le centre</li>
+          <li>Déroulez votre pelote jusqu'au "lieu de travail" (centre de la salle)</li>
+          <li>Observez qui voyage en même temps que vous !</li>
+        </ol>
+      </div>
+      
+      <div class="live-stats">
+        <h3>📊 Statistiques collectives :</h3>
+        <div id="collectiveStats"></div>
+      </div>
+      
+      <div class="navigation-buttons">
+        <button onclick="showStep(4)">⬅️ Retour</button>
+      </div>
+    </div>
+
+    <!-- Page d'invitation -->
+    <div id="invitePage" class="step">
+      <h2>📨 Inviter des participants</h2>
+      <div id="inviteTimer" class="invite-timer"></div>
+      <p style="text-align: center;">Partagez ce QR code avec vos amis pour qu'ils puissent rejoindre l'activité :</p>
+      
+      <div class="qrcode-container">
+        <div id="inviteQrcode"></div>
+      </div>
+      
+      <div class="invite-label">
+        📨 CODE INVITATION - Ne pas scanner pendant le jeu !
+      </div>
+      
+      <p style="text-align: center;">Ils pourront scanner ce code pour accéder directement à l'application.</p>
+      
+      <div class="navigation-buttons" id="inviteNavButtons">
+        <button onclick="showStep(1)">⬅️ Retour vers le jeu</button>
+      </div>
+    </div>
+
+    <!-- Page administrateur -->
+    <div id="adminPage" class="step">
+      <h2>🔐 Administration</h2>
+      
+      <div id="adminLogin">
+        <input type="password" id="adminPassword" placeholder="Mot de passe admin" />
+        <button onclick="adminLogin()">🔓 Se connecter</button>
+        <div id="adminError" class="error-message"></div>
+      </div>
+      
+      <div id="adminPanel" style="display: none;">
+        <div class="admin-section">
+          <h3>⏰ Contrôle du chronomètre</h3>
+          
+          <div class="timer-controls">
+            <button onclick="startCollectiveTimer()" class="admin-btn start">
+              ▶️ Démarrer
+            </button>
+            <button onclick="pauseCollectiveTimer()" class="admin-btn pause">
+              ⏸️ Pause
+            </button>
+            <button onclick="resetCollectiveTimer()" class="admin-btn reset">
+              🔄 Réinitialiser
+            </button>
+          </div>
+          
+          <div class="timer-status">
+            <p>Statut : <span id="timerStatus">Arrêté</span></p>
+            <p>Heure virtuelle : <span id="adminCurrentTime">06:00</span></p>
+          </div>
+          
+          <div class="timer-settings">
+            <label>Heure de démarrage virtuelle :</label>
+            <input type="time" id="virtualStartTime" value="06:00" />
+            
+            <label>Vitesse (secondes réelles = minutes virtuelles) :</label>
+            <select id="timerSpeed">
+              <option value="10">Lent (10s réelles = 15min virtuelles)</option>
+              <option value="5" selected>Normal (5s réelles = 15min virtuelles)</option>
+              <option value="2">Rapide (2s réelles = 15min virtuelles)</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="admin-section">
+          <h3>📊 Statistiques</h3>
+          <div id="adminStats"></div>
+          <button onclick="refreshAdminStats()">🔄 Actualiser</button>
+        </div>
+        
+        <div class="admin-section">
+          <h3>🎮 Actions rapides</h3>
+          <button onclick="resetAllData()" class="admin-btn danger">
+            🗑️ Réinitialiser toutes les données
+          </button>
+          <button onclick="exportData()" class="admin-btn">
+            📥 Exporter les données
+          </button>
+        </div>
+      </div>
+      
+      <div class="navigation-buttons">
+        <button onclick="showStep(1)">⬅️ Retour</button>
+      </div>
+    </div>
+
+    <canvas id="canvas" style="display: none;"></canvas>
+    <canvas id="gameCanvas" style="display: none;"></canvas>
+    <canvas id="positioningCanvas" style="display: none;"></canvas>
+  </div>
+
+  <!-- Bouton admin flottant -->
+  <button class="admin-floating-btn" onclick="showAdminPage()">🔐</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
+  <script>
+    const VALID_ACCESS_CODES = ["25"];
+    const ADMIN_PASSWORD = 'mobilite2025';
+    const participantNicknames = ['🦸', '🐼', '🦁', '🐻', '🦊', '🐱', '🐶', '🐭', '🐹', '🐰'];
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function generateUniqueId() {
+      return Math.random().toString(36).substr(2, 15);
+    }
+
+    let myCoords = null;
+    let myCityName = '';
+    let myFullAddress = '';
+    let myUniqueId = '';
+    let myTransportMode = '';
+    let myDepartureTime = '';
+    let participants = [];
+    let scanning = false;
+    let animationFrameId = null;
+    let MIN_PARTICIPANTS_REQUIRED = 20;
+    document.getElementById('minParticipantsRequiredDisplay').textContent = MIN_PARTICIPANTS_REQUIRED;
+    
+    let gameTargets = [];
+    let scannedTargets = [];
+    let attemptsLeft = 5;
+    let score = 0;
+    let gameActive = false;
+
+    let timerInterval = null;
+    let timerRunning = false;
+    let virtualTime = 6 * 60;
+    let timerPausedAt = null;
+    let inviteCountdownInterval = null;
+
+    const miniChallenges = [
+      {
+        title: "🤝 Connecteurs",
+        task: "Présentez-vous mutuellement à une 3ème personne que vous scannerez ensemble",
+        icon: "🎭"
+      },
+      {
+        title: "🎯 Triplette",
+        task: "Formez un trio : scannez-vous tous les 3 en cercle",
+        icon: "🔺"
+      },
+      {
+        title: "🌉 Pont humain",
+        task: "Trouvez quelqu'un qui habite entre vous deux (géographiquement)",
+        icon: "🗺️"
+      },
+      {
+        title: "🎲 Hasard",
+        task: "Scannez 2 personnes dont les prénoms commencent par la même lettre",
+        icon: "🔤"
+      },
+      {
+        title: "🚀 Explorateurs",
+        task: "L'un vient en voiture, l'autre pas : échangez vos motivations",
+        icon: "💬"
+      }
+    ];
+
+    const scoreTitles = {
+      0: "🎯 Expert du covoiturage !",
+      1: "🚗 Pro du covoiturage",
+      2: "👍 Bon partenaire",
+      3: "😊 Débutant motivé",
+      4: "🤔 En apprentissage",
+      5: "🎯 À retenter !"
+    };
+
+    function checkAccessCode() {
+      const input = $('accessCodeInput');
+      const errorDiv = $('accessError');
+      const code = input.value.trim();
+
+      if (VALID_ACCESS_CODES.includes(code)) {
+        $('accessCodeInput').style.display = 'none';
+        document.querySelector("#step1 button[onclick='checkAccessCode()']").style.display = 'none';
+        errorDiv.style.display = 'none';
+        $('locationSection').style.display = 'block';
+      } else {
+        errorDiv.style.display = 'block';
+        input.value = '';
+      }
+    }
+
+    function showError(message) {
+      const errorDiv = $('errorMessage');
+      if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        setTimeout(() => {
+          errorDiv.style.display = 'none';
+        }, 5000);
+      }
+    }
+
+    function showSuccess(message) {
+      const successDiv = $('successMessage');
+      if (successDiv) {
+        successDiv.textContent = message;
+        successDiv.style.display = 'block';
+        setTimeout(() => {
+          successDiv.style.display = 'none';
+        }, 3000);
+      }
+    }
+
+    function showDistance(distance, elementId = 'scanResult') {
+      const scanResult = $(elementId);
+      if (scanResult) {
+        let emoji = '🌟';
+        if (distance < 5) emoji = '🚶‍♂️';
+        else if (distance < 10) emoji = '🚗';
+        else if (distance < 20) emoji = '🚲';
+        
+        scanResult.innerHTML = `
+          <div class="distance-info">
+            ${emoji} Distance : <strong>${distance.toFixed(1)} km</strong>
+          </div>
+        `;
+      }
+    }
+
+    function haversineKm(aLat, aLon, bLat, bLon) {
+      const R = 6371;
+      const dLat = (bLat - aLat) * Math.PI / 180;
+      const dLon = (bLon - aLon) * Math.PI / 180;
+      const A = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * Math.PI / 180) * Math.cos(bLat * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+      return 2 * R * Math.atan2(Math.sqrt(A), Math.sqrt(1 - A));
+    }
+
+    async function geocode(location) {
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&addressdetails=1`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data || data.length === 0) throw new Error('Localisation non trouvée');
+        
+        const firstResult = data[0];
+        
+        return { 
+          lat: parseFloat(firstResult.lat), 
+          lon: parseFloat(firstResult.lon), 
+          displayName: firstResult.display_name,
+          fullAddress: firstResult.display_name
+        };
+      } catch (error) {
+        throw new Error('Erreur de géocodage: ' + error.message);
+      }
+    }
+
+    function genMyQRCode(targetElementId = 'qrcode') {
+      const qrcodeElement = $(targetElementId);
+      if (!qrcodeElement) {
+        showError('Élément QR code non trouvé: ' + targetElementId);
+        return;
+      }
+      
+      qrcodeElement.innerHTML = '';
+      
+      const qrData = JSON.stringify({
+        id: myUniqueId,
+        lat: myCoords.lat,
+        lon: myCoords.lon,
+        transport: myTransportMode,
+        emoji: participantNicknames[Math.floor(Math.random() * participantNicknames.length)]
+      });
+      
+      try {
+        new QRCode(qrcodeElement, {
+          text: qrData,
+          width: 180,
+          height: 180,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.L
+        });
+      } catch (error) {
+        showError("Erreur génération QR code: " + error.message);
+      }
+    }
+
+    function genInviteQRCode() {
+      const inviteQrcode = $('inviteQrcode');
+      if (!inviteQrcode) return;
+      
+      inviteQrcode.innerHTML = '';
+      
+      const currentUrl = window.location.href;
+      
+      try {
+        new QRCode(inviteQrcode, {
+          text: currentUrl,
+          width: 180,
+          height: 180,
+          colorDark: '#9C27B0',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.L
+        });
+        
+        setTimeout(() => {
+          inviteQrcode.style.border = '4px solid #9C27B0';
+          inviteQrcode.style.boxShadow = '0 0 20px rgba(156, 39, 176, 0.5)';
+        }, 100);
+      } catch (error) {
+        console.error("Erreur génération QR code d'invitation:", error);
+      }
+    }
+
+    function showStep(stepNumber) {
+      document.querySelectorAll('.step').forEach(step => {
+        if (step) step.classList.remove('active');
+      });
+      document.querySelectorAll('.step-dot').forEach(dot => {
+        if (dot) dot.classList.remove('active');
+      });
+      
+      const stepElement = $(`step${stepNumber}`);
+      const dotElement = $(`step${stepNumber}Dot`);
+      
+      if (stepElement) stepElement.classList.add('active');
+      if (dotElement) dotElement.classList.add('active');
+      
+      stopAllCameras();
+
+      if (stepNumber === 3) {
+        initGame();
+      }
+      
+      if (stepNumber === 2) {
+        setTimeout(() => genMyQRCode('qrcode'), 100);
+      } else if (stepNumber === 3) {
+        setTimeout(() => genMyQRCode('qrcodeStep3'), 100);
+      } else if (stepNumber === 5) {
+        const userTime = localStorage.getItem('departureTime') || myDepartureTime;
+        if ($('userDepartureDisplay')) {
+          $('userDepartureDisplay').textContent = userTime;
+        }
+        updateCollectiveStats();
+        syncTimerForParticipants();
+      }
+      
+      window.scrollTo(0, 0);
+    }
+
+    function showInvitePage() {
+      document.querySelectorAll('.step').forEach(step => {
+        if (step) step.classList.remove('active');
+      });
+      $('invitePage').classList.add('active');
+      genInviteQRCode();
+      
+      let countdown = 30;
+      const timerDisplay = $('inviteTimer');
+      
+      if (inviteCountdownInterval) {
+        clearInterval(inviteCountdownInterval);
+      }
+      
+      inviteCountdownInterval = setInterval(() => {
+        countdown--;
+        timerDisplay.innerHTML = `⏱️ Retour automatique dans <strong>${countdown}s</strong>`;
+        
+        if (countdown <= 10) {
+          timerDisplay.style.color = '#FF5722';
+        }
+        
+        if (countdown <= 0) {
+          clearInterval(inviteCountdownInterval);
+          showStep(2);
+        }
+      }, 1000);
+      
+      const navButtons = $('inviteNavButtons');
+      const existingExtendBtn = navButtons.querySelector('.extend-btn');
+      if (existingExtendBtn) {
+        existingExtendBtn.remove();
+      }
+      
+      const extendBtn = document.createElement('button');
+      extendBtn.textContent = '⏸️ +30 secondes';
+      extendBtn.style.background = '#FF9800';
+      extendBtn.className = 'extend-btn';
+      extendBtn.onclick = () => { 
+        countdown += 30;
+        showSuccess('⏱️ Temps prolongé !');
+      };
+      navButtons.insertBefore(extendBtn, navButtons.firstChild);
+      
+      window.scrollTo(0, 0);
+    }
+
+    function initGame() {
+      if (participants.length < MIN_PARTICIPANTS_REQUIRED) {
+        showError(`Vous devez scanner au moins ${MIN_PARTICIPANTS_REQUIRED} personne(s) pour jouer !`);
+        setTimeout(() => showStep(2), 2000);
+        return;
+      }
+      
+      gameTargets = participants.slice(0, 5);
+      scannedTargets = [];
+      attemptsLeft = 5;
+      score = 0;
+      gameActive = true;
+      
+      updateGameDisplay();
+    }
+
+    function resetGame() {
+      initGame();
+    }
+
+    function updateGameDisplay() {
+      $('scoreBadge').textContent = `Score: ${score}/3`;
+      $('attemptsLeft').textContent = attemptsLeft;
+      
+      const targetList = $('targetList');
+      targetList.innerHTML = '';
+      
+      gameTargets.forEach((target, index) => {
+        const card = document.createElement('div');
+        card.className = 'participant-card';
+        
+        if (scannedTargets.includes(target.id)) {
+          card.classList.add('scanned');
+        } else {
+          card.classList.add('target');
+        }
+        
+        let medal = '';
+        if (index === 0) medal = '🥇 ';
+        else if (index === 1) medal = '🥈 ';
+        else if (index === 2) medal = '🥉 ';
+        
+        card.innerHTML = `
+          <strong>${medal}${participantNicknames[index] || '🤖'} (${target.distance.toFixed(1)} km)</strong>
+          <div style="clear:both;"></div>
+          ${scannedTargets.includes(target.id) ? '<small style="color:#4CAF50">✅ Trouvé !</small>' : '<small style="color:#ffd700">🎯 À scanner</small>'}
+        `;
+        targetList.appendChild(card);
+      });
+      
+      checkGameEnd();
+    }
+
+    function checkGameEnd() {
+      if (score >= 3 || attemptsLeft <= 0) {
+        gameActive = false;
+        const errors = (5 - attemptsLeft) - score;
+        const title = scoreTitles[errors] || scoreTitles[5];
+        
+        $('gameResult').innerHTML = `
+          <div style="color:#4CAF50; font-weight:bold; font-size:1.2rem;">
+            ${title}
+          </div>
+          <div>
+            ${score} voisins trouvés sur 3<br>
+            ${errors} erreur(s) commise(s)
+          </div>
+        `;
+        
+        $('gameScanBtn').disabled = true;
+      }
+    }
+
+    function handleGameScan(data) {
+      if (!gameActive) return false;
+      
+      const targetIndex = gameTargets.findIndex(target => target.id === data.id);
+      
+      if (targetIndex !== -1) {
+        if (!scannedTargets.includes(data.id)) {
+          scannedTargets.push(data.id);
+          score++;
+          const distance = haversineKm(myCoords.lat, myCoords.lon, data.lat, data.lon);
+          showSuccess(`✅ Bravo ! Ce participant est bien un de vos voisins ! (${distance.toFixed(1)} km)`);
+        } else {
+          showError("⚠️ Vous avez déjà scanné cette personne !");
+        }
+      } else {
+        showError("❌ Ce n'est pas un de vos 5 voisins les plus proches !");
+      }
+      
+      attemptsLeft--;
+      updateGameDisplay();
+      return true;
+    }
+
+    function handlePositioningScan(data) {
+      const distance = haversineKm(myCoords.lat, myCoords.lon, data.lat, data.lon);
+      
+      const scanItem = document.createElement('div');
+      scanItem.className = 'reference-item';
+      scanItem.innerHTML = `
+        <span>${data.type === 'fixed' ? '📍 Repère fixe ' + (data.emoji || '') : '👤 ' + (data.emoji || 'Participant')}</span>
+        <span class="distance-badge">${distance.toFixed(1)} km</span>
+      `;
+      
+      $('scansList').prepend(scanItem);
+      
+      const positionedCount = parseInt($('positionedCount').textContent) + 1;
+      $('positionedCount').textContent = positionedCount;
+      
+      return true;
+    }
+
+    function showRandomChallenge() {
+      const randomChallenge = miniChallenges[Math.floor(Math.random() * miniChallenges.length)];
+      const challengeTitle = $('challengeTitle');
+      const challengeTask = $('challengeTask');
+      const challengeSection = $('challengeSection');
+      const continueChallengeBtn = $('continueChallengeBtn');
+      
+      if (challengeTitle && challengeTask && challengeSection) {
+        challengeTitle.textContent = randomChallenge.icon + ' ' + randomChallenge.title;
+        challengeTask.textContent = randomChallenge.task;
+        
+        continueChallengeBtn.onclick = function() {
+          challengeSection.style.display = 'none';
+          $('scanBtn').style.display = 'block';
+          $('scanBtn').classList.add('scan-animation');
+        };
+        
+        challengeSection.style.display = 'block';
+        stopAllCameras();
+      }
+    }
+
+    function addParticipant(data) {
+      const existing = participants.find(p => p.id === data.id);
+      if (existing) return false;
+      
+      const distance = haversineKm(myCoords.lat, myCoords.lon, data.lat, data.lon);
+      const participant = {
+        id: data.id,
+        lat: data.lat,
+        lon: data.lon,
+        cityName: data.cityName || 'Localité inconnue',
+        distance,
+        transport: data.transport || '',
+        emoji: data.emoji || '🤖',
+        timestamp: Date.now()
+      };
+      
+      participants.push(participant);
+      participants.sort((a, b) => a.distance - b.distance);
+      
+      updateProgress();
+      showDistance(distance);
+      
+      if (distance < 5) {
+        showRandomChallenge();
+      }
+      
+      const goToStep3 = $('goToStep3');
+      if (goToStep3 && participants.length >= MIN_PARTICIPANTS_REQUIRED) {
+        goToStep3.disabled = false;
+      }
+      
+      return true;
+    }
+
+    function updateProgress() {
+      const scanCount = participants.length;
+      const scanCountElement = $('scanCount');
+      const progressElement = $('step1Progress');
+      
+      if (scanCountElement) {
+        scanCountElement.textContent = scanCount;
+      }
+      
+      const progress = Math.min((scanCount / 30) * 100, 100);
+      if (progressElement) {
+        progressElement.style.width = `${progress}%`;
+      }
+    }
+
+    function stopAllCameras() {
+      scanning = false;
+      
+      document.querySelectorAll('.camera-view').forEach(view => {
+        view.classList.remove('active');
+      });
+      
+      document.querySelectorAll('.scan-animation').forEach(btn => {
+        btn.style.display = 'block';
+        btn.classList.add('scan-animation');
+      });
+      
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+      
+      const videos = ['video', 'gameVideo', 'positioningVideo'];
+      videos.forEach(videoId => {
+        const video = $(videoId);
+        if (video && video.srcObject) {
+          video.srcObject.getTracks().forEach(track => track.stop());
+          video.srcObject = null;
+        }
+      });
+      
+      if (inviteCountdownInterval) {
+        clearInterval(inviteCountdownInterval);
+        inviteCountdownInterval = null;
+      }
+    }
+
+    function startScanLoop(type = 'normal') {
+      const videoId = type === 'game' ? 'gameVideo' : type === 'positioning' ? 'positioningVideo' : 'video';
+      const canvasId = type === 'game' ? 'gameCanvas' : type === 'positioning' ? 'positioningCanvas' : 'canvas';
+      const cameraViewId = type === 'game' ? 'gameCameraView' : type === 'positioning' ? 'positioningCameraView' : 'cameraView';
+      const scanBtnId = type === 'game' ? 'gameScanBtn' : type === 'positioning' ? 'positioningScanBtn' : 'scanBtn';
+      
+      const video = $(videoId);
+      const canvas = $(canvasId);
+      const cameraView = $(cameraViewId);
+      const scanBtn = $(scanBtnId);
+      
+      if (!video || !canvas) {
+        showError('Éléments caméra non trouvés');
+        return;
+      }
+      
+      scanning = true;
+      if (scanBtn) scanBtn.style.display = 'none';
+      if (cameraView) cameraView.classList.add('active');
+      
+      const ctx = canvas.getContext('2d');
+      
+      navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' }
+      }).then(stream => {
+        video.srcObject = stream;
+        video.play();
+        
+        const scan = () => {
+          if (!scanning) return;
+          
+          if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            
+            try {
+              const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: 'dontInvert',
+              });
+              
+              if (code) {
+                try {
+                  const parsedData = JSON.parse(code.data);
+                  
+                  if (parsedData.id && parsedData.lat && parsedData.lon) {
+                    let handled = false;
+                    if (type === 'game') {
+                      handled = handleGameScan(parsedData);
+                    } else if (type === 'positioning') {
+                      handled = handlePositioningScan(parsedData);
+                    } else {
+                      handled = addParticipant(parsedData);
+                    }
+                    
+                    if (handled) {
+                      stopAllCameras();
+                    }
+                    return;
+                  }
+                } catch (e) {
+                  console.log('QR code invalide');
+                }
+              }
+            } catch (error) {
+              console.log('Erreur analyse QR:', error);
+            }
+          }
+          
+          animationFrameId = requestAnimationFrame(scan);
+        };
+        
+        animationFrameId = requestAnimationFrame(scan);
+      }).catch(e => {
+        showError('Erreur accès caméra: ' + e.message);
+        stopAllCameras();
+      });
+    }
+
+    function calculateCollectiveStats() {
+      const transportCounts = {
+        'car-solo': 0,
+        'carpool': 0,
+        'bike': 0,
+        'public': 0
+      };
+      
+      participants.forEach(p => {
+        if (p.transport) transportCounts[p.transport]++;
+      });
+      
+      const total = participants.length;
+      
+      if (total === 0) {
+        return '<p>Aucune donnée disponible</p>';
+      }
+      
+      return `
+        <p><strong>👥 ${total} participants</strong></p>
+        <p>🟡 Voiture solo : ${transportCounts['car-solo']} (${Math.round(transportCounts['car-solo']/total*100)}%)</p>
+        <p>🟨 Covoiturage : ${transportCounts.carpool} (${Math.round(transportCounts.carpool/total*100)}%)</p>
+        <p>🔵 Vélo/Marche : ${transportCounts.bike} (${Math.round(transportCounts.bike/total*100)}%)</p>
+        <p>🌸 Transport en commun : ${transportCounts.public} (${Math.round(transportCounts.public/total*100)}%)</p>
+      `;
+    }
+
+    function updateCollectiveStats() {
+      const statsDiv = $('collectiveStats');
+      if (statsDiv) {
+        statsDiv.innerHTML = calculateCollectiveStats();
+      }
+    }
+
+    function adminLogin() {
+      const password = $('adminPassword').value;
+      const adminError = $('adminError');
+      
+      if (password === ADMIN_PASSWORD) {
+        $('adminLogin').style.display = 'none';
+        $('adminPanel').style.display = 'block';
+        refreshAdminStats();
+        showSuccess('✅ Connecté en tant qu\'admin');
+      } else {
+        adminError.textContent = '❌ Mot de passe incorrect';
+        adminError.style.display = 'block';
+        setTimeout(() => {
+          adminError.style.display = 'none';
+        }, 3000);
+      }
+    }
+
+    function startCollectiveTimer() {
+      if (timerRunning) {
+        showError('Le chronomètre est déjà en cours');
+        return;
+      }
+      
+      timerRunning = true;
+      $('timerStatus').textContent = '▶️ En cours';
+      $('timerStatus').style.color = '#4CAF50';
+      
+      const startTimeInput = $('virtualStartTime').value;
+      const [hours, mins] = startTimeInput.split(':').map(Number);
+      virtualTime = hours * 60 + mins;
+      
+      const timerSpeed = parseInt($('timerSpeed').value);
+      
+      localStorage.setItem('timerStartTime', Date.now());
+      localStorage.setItem('timerVirtualStart', virtualTime);
+      localStorage.setItem('timerSpeed', timerSpeed);
+      localStorage.setItem('timerRunning', 'true');
+      
+      timerInterval = setInterval(() => {
+        virtualTime += 15;
+        updateTimerDisplay();
+        localStorage.setItem('timerCurrentVirtual', virtualTime);
+      }, timerSpeed * 1000);
+      
+      showSuccess('⏰ Chronomètre démarré !');
+    }
+
+    function pauseCollectiveTimer() {
+      if (!timerRunning) {
+        showError('Le chronomètre n\'est pas en cours');
+        return;
+      }
+      
+      timerRunning = false;
+      clearInterval(timerInterval);
+      timerPausedAt = virtualTime;
+      
+      $('timerStatus').textContent = '⏸️ En pause';
+      $('timerStatus').style.color = '#FF9800';
+      
+      localStorage.setItem('timerRunning', 'false');
+      localStorage.setItem('timerPausedAt', timerPausedAt);
+      
+      showSuccess('⏸️ Chronomètre en pause');
+    }
+
+    function resetCollectiveTimer() {
+      timerRunning = false;
+      clearInterval(timerInterval);
+      virtualTime = 6 * 60;
+      timerPausedAt = null;
+      
+      $('timerStatus').textContent = '🛑 Arrêté';
+      $('timerStatus').style.color = '#999';
+      
+      updateTimerDisplay();
+      
+      localStorage.removeItem('timerStartTime');
+      localStorage.removeItem('timerRunning');
+      localStorage.removeItem('timerPausedAt');
+      localStorage.removeItem('timerCurrentVirtual');
+      
+      showSuccess('🔄 Chronomètre réinitialisé');
+    }
+
+    function updateTimerDisplay() {
+      const hours = Math.floor(virtualTime / 60);
+      const mins = virtualTime % 60;
+      const timeStr = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+      
+      if ($('adminCurrentTime')) {
+        $('adminCurrentTime').textContent = timeStr;
+      }
+      
+      if ($('currentTime')) {
+        $('currentTime').textContent = timeStr;
+      }
+      
+      checkParticipantAlerts();
+    }
+
+    function checkParticipantAlerts() {
+      const userTime = localStorage.getItem('departureTime') || myDepartureTime;
+      if (!userTime) return;
+      
+      const [userH, userM] = userTime.split(':').map(Number);
+      const userTotalMins = userH * 60 + userM;
+      
+      if (Math.abs(virtualTime - userTotalMins) < 5) {
+        const departureStatus = $('departureStatus');
+        if (departureStatus) {
+          departureStatus.innerHTML = "🚀 <strong>C'EST VOTRE TOUR !</strong>";
+          departureStatus.style.background = "#4CAF50";
+        }
+      }
+    }
+
+    function refreshAdminStats() {
+      const stats = calculateCollectiveStats();
+      $('adminStats').innerHTML = stats;
+    }
+
+    function resetAllData() {
+      if (!confirm('⚠️ Êtes-vous sûr de vouloir réinitialiser TOUTES les données ?')) {
+        return;
+      }
+      
+      participants = [];
+      gameTargets = [];
+      scannedTargets = [];
+      localStorage.clear();
+      
+      showSuccess('🗑️ Toutes les données ont été réinitialisées');
+      refreshAdminStats();
+    }
+
+    function exportData() {
+      const data = {
+        participants: participants,
+        stats: calculateCollectiveStats(),
+        timestamp: new Date().toISOString()
+      };
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mobilite-data-${Date.now()}.json`;
+      a.click();
+      
+      showSuccess('📥 Données exportées !');
+    }
+
+    function syncTimerForParticipants() {
+      setInterval(() => {
+        const isRunning = localStorage.getItem('timerRunning') === 'true';
+        
+        if (isRunning) {
+          const currentVirtual = parseInt(localStorage.getItem('timerCurrentVirtual') || '360');
+          virtualTime = currentVirtual;
+          updateTimerDisplay();
+        }
+      }, 1000);
+    }
+
+    function showAdminPage() {
+      document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
+      $('adminPage').classList.add('active');
+      $('adminLogin').style.display = 'block';
+      $('adminPanel').style.display = 'none';
+      $('adminPassword').value = '';
+      window.scrollTo(0, 0);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const saveLocationBtn = $('saveLocation');
+      const scanBtn = $('scanBtn');
+      const stopScanBtn = $('stopScanBtn');
+      const gameScanBtn = $('gameScanBtn');
+      const gameStopScanBtn = $('gameStopScanBtn');
+      const positioningScanBtn = $('positioningScanBtn');
+      const positioningStopScanBtn = $('positioningStopScanBtn');
+      const resetGameBtn = $('resetGameBtn');
+      
+      if (saveLocationBtn) {
+        saveLocationBtn.addEventListener('click', async () => {
+          const userAddress = $('userAddress');
+          const transportMode = $('transportMode');
+          const departureTime = $('departureTime');
+          
+          if (!userAddress) {
+            showError('Champ adresse non trouvé');
+            return;
+          }
+          
+          const location = userAddress.value.trim();
+          const transport = transportMode.value;
+          const departure = departureTime.value;
+          
+          if (!location) {
+            showError('Entrez votre localisation');
+            return;
+          }
+          
+          if (!transport) {
+            showError('Sélectionnez votre mode de transport');
+            return;
+          }
+          
+          try {
+            const res = await geocode(location);
+            myUniqueId = generateUniqueId();
+            myCoords = { 
+              lat: res.lat, 
+              lon: res.lon
+            };
+            myFullAddress = res.fullAddress;
+            myTransportMode = transport;
+            myDepartureTime = departure;
+            
+            localStorage.setItem('departureTime', departure);
+            localStorage.setItem('transportMode', transport);
+            
+            const locationSection = $('locationSection');
+            const afterLocationSection = $('afterLocationSection');
+            
+            if (locationSection && afterLocationSection) {
+              locationSection.style.display = 'none';
+              afterLocationSection.style.display = 'block';
+            }
+            
+            const detectedAddress = $('detectedAddress');
+            if (detectedAddress) {
+              detectedAddress.textContent = res.fullAddress;
+            }
+            
+            genMyQRCode();
+            showSuccess(`✅ Localisation enregistrée !`);
+            
+          } catch (e) {
+            showError('Erreur: ' + e.message);
+          }
+        });
+      }
+      
+      if (scanBtn) {
+        scanBtn.addEventListener('click', () => startScanLoop('normal'));
+      }
+      
+      if (stopScanBtn) {
+        stopScanBtn.addEventListener('click', stopAllCameras);
+      }
+      
+      if (gameScanBtn) {
+        gameScanBtn.addEventListener('click', () => startScanLoop('game'));
+      }
+      
+      if (gameStopScanBtn) {
+        gameStopScanBtn.addEventListener('click', stopAllCameras);
+      }
+      
+      if (positioningScanBtn) {
+        positioningScanBtn.addEventListener('click', () => startScanLoop('positioning'));
+      }
+      
+      if (positioningStopScanBtn) {
+        positioningStopScanBtn.addEventListener('click', stopAllCameras);
+      }
+      
+      if (resetGameBtn) {
+        resetGameBtn.addEventListener('click', resetGame);
+      }
+    });
+
+    window.addEventListener('beforeunload', stopAllCameras);
+  </script>
+</body>
+</html>
