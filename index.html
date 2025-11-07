@@ -508,12 +508,12 @@
           <video id="video" autoplay playsinline muted></video>
         </div>
         <div class="camera-controls">
-          <button id="stopScanBtn" style="background: #ff6b6b;">🛑 Arrêter la caméra</button>
+          <button id="stopScanBtn" style="background: #ff6b6b;" onclick="stopAllCameras()">🛑 Arrêter la caméra</button>
         </div>
       </div>
 
       <div id="normalScanSection">
-        <button id="scanBtn" class="scan-animation">📱 Scanner un max de codes</button>
+        <button id="scanBtn" class="scan-animation" onclick="startScanLoop('normal')">📱 Scanner un max de codes</button>
         <div id="scanResult"></div>
       </div>
 
@@ -566,12 +566,12 @@
           <video id="gameVideo" autoplay playsinline muted></video>
         </div>
         <div class="camera-controls">
-          <button id="gameStopScanBtn" style="background: #ff6b6b;">🛑 Arrêter la caméra</button>
+          <button id="gameStopScanBtn" style="background: #ff6b6b;" onclick="stopAllCameras()">🛑 Arrêter la caméra</button>
         </div>
       </div>
 
       <div id="gameScanSection">
-        <button id="gameScanBtn" class="scan-animation">📱 Scanner un voisin</button>
+        <button id="gameScanBtn" class="scan-animation" onclick="startScanLoop('game')">📱 Scanner un voisin</button>
         <div id="gameScanResult"></div>
       </div>
 
@@ -602,11 +602,11 @@
           <video id="positioningVideo" autoplay playsinline muted></video>
         </div>
         <div class="camera-controls">
-          <button id="positioningStopScanBtn" style="background: #ff6b6b;">🛑 Arrêter la caméra</button>
+          <button id="positioningStopScanBtn" style="background: #ff6b6b;" onclick="stopAllCameras()">🛑 Arrêter la caméra</button>
         </div>
       </div>
       
-      <button id="positioningScanBtn" class="scan-animation">📱 Scanner un repère</button>
+      <button id="positioningScanBtn" class="scan-animation" onclick="startScanLoop('positioning')">📱 Scanner un repère</button>
       
       <div class="positioning-stats">
         <p>✅ <span id="positionedCount">0</span> personnes positionnées</p>
