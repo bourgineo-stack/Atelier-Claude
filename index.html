@@ -1241,6 +1241,7 @@
     }
 
     function stopAllCameras() {
+      console.log('🛑 Arrêt de toutes les caméras');
       scanning = false;
       
       document.querySelectorAll('.camera-view').forEach(view => {
@@ -1271,6 +1272,19 @@
         inviteCountdownInterval = null;
       }
     }
+
+    // AJOUTEZ ICI LA FONCTION DEBUG
+function debugCamera() {
+  const video = $('video') || $('gameVideo') || $('positioningVideo');
+  if (video && video.srcObject) {
+    console.log('=== DEBUG CAMERA ===');
+    console.log('Video readyState:', video.readyState);
+    console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+    console.log('Video playing:', !video.paused);
+    console.log('Scanning active:', scanning);
+    console.log('====================');
+  }
+}
 
     function startScanLoop(type = 'normal') {
   console.log('🚀 Démarrage scan - Type:', type);
