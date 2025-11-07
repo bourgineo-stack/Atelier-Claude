@@ -945,11 +945,6 @@ function restoreUserData() {
     }
 
    function genMyQRCode(targetElementId = 'qrcode') {
-  console.log('🔍 DEBUG genMyQRCode - Début');
-  console.log('myUniqueId:', myUniqueId);
-  console.log('myCoords:', myCoords);
-  console.log('myTransportMode:', myTransportMode);
-  
   const qrcodeElement = $(targetElementId);
   if (!qrcodeElement) {
     showError('Élément QR code non trouvé: ' + targetElementId);
@@ -958,58 +953,30 @@ function restoreUserData() {
   
   qrcodeElement.innerHTML = '';
   
-  // VÉRIFIER QUE TOUTES LES DONNÉES SONT PRÉSENTES
-  if (!myUniqueId || !myCoords || !myCoords.lat || !myCoords.lon) {
-    console.error('❌ Données manquantes pour QR code:');
-    console.error('- myUniqueId:', myUniqueId);
-    console.error('- myCoords:', myCoords);
-    
-    // Régénérer l'ID si manquant
-    if (!myUniqueId) {
-      myUniqueId = localStorage.getItem('myUniqueId') || generateUniqueId();
-      localStorage.setItem('myUniqueId', myUniqueId);
-      console.log('🆕 myUniqueId régénéré:', myUniqueId);
-    }
-    
-    // Si les coordonnées manquent, essayer de les récupérer
-    if (!myCoords) {
-      const savedCoords = localStorage.getItem('userCoords');
-      if (savedCoords) {
-        myCoords = JSON.parse(savedCoords);
-        console.log('📍 Coordonnées restaurées:', myCoords);
-      }
-    }
-  }
+  // Associer un index d'emoji fixe basé sur l'ID
+  const emojiIndex = parseInt(myUniqueId.substring(0, 2), 36) % participantNicknames.length;
   
-  // Générer un emoji fixe basé sur l'ID
-if (!localStorage.getItem('myEmoji')) {
-  const emojiIndex = parseInt(myUniqueId.charCodeAt(0)) % participantNicknames.length;
-  localStorage.setItem('myEmoji', participantNicknames[emojiIndex]);
-}
-const myEmoji = localStorage.getItem('myEmoji');
-
-const qrData = JSON.stringify({
-  id: myUniqueId,
-  lat: myCoords.lat,
-  lon: myCoords.lon,
-  transport: myTransportMode,
-  emoji: myEmoji
-});
+  const qrData = JSON.stringify({
+    id: myUniqueId,
+    lat: myCoords.lat,
+    lon: myCoords.lon,
+    transport: myTransportMode,
+    emojiIndex: emojiIndex  // ← Juste un nombre, pas l'emoji
+  });
   
-  console.log('📦 Données QR code générées:', qrData);
+  console.log('🔲 QR généré:', qrData);
   
   try {
     new QRCode(qrcodeElement, {
       text: qrData,
-      width: 180,
-      height: 180,
+      width: 256,
+      height: 256,
       colorDark: '#000000',
       colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.L
+      correctLevel: QRCode.CorrectLevel.H
     });
-    console.log('✅ QR code généré avec succès');
   } catch (error) {
-    console.error('❌ Erreur génération QR code:', error);
+    console.error('❌ Erreur génération QR:', error);
     showError("Erreur génération QR code: " + error.message);
   }
 }
@@ -1265,15 +1232,15 @@ const qrData = JSON.stringify({
       
       const distance = haversineKm(myCoords.lat, myCoords.lon, data.lat, data.lon);
       const participant = {
-        id: data.id,
-        lat: data.lat,
-        lon: data.lon,
-        cityName: data.cityName || 'Localité inconnue',
-        distance,
-        transport: data.transport || '',
-        emoji: data.emoji || '🤖',
-        timestamp: Date.now()
-      };
+  id: data.id,
+  lat: data.lat,
+  lon: data.lon,
+  cityName: data.cityName || 'Localité inconnue',
+  distance,
+  transport: data.transport || '',
+  emoji: participantNicknames[data.emojiIndex] || '🤖', // ← Utilise l'index pour récupérer l'emoji
+  timestamp: Date.now()
+};
       
       participants.push(participant);
       participants.sort((a, b) => a.distance - b.distance);
@@ -1342,8 +1309,6 @@ const qrData = JSON.stringify({
     }
 
     function startScanLoop(type = 'normal') {
-  console.log('🚀 Démarrage scan - Type:', type);
-  
   const videoId = type === 'game' ? 'gameVideo' : type === 'positioning' ? 'positioningVideo' : 'video';
   const canvasId = type === 'game' ? 'gameCanvas' : type === 'positioning' ? 'positioningCanvas' : 'canvas';
   const cameraViewId = type === 'game' ? 'gameCameraView' : type === 'positioning' ? 'positioningCameraView' : 'cameraView';
@@ -1359,9 +1324,6 @@ const qrData = JSON.stringify({
     return;
   }
   
-  // Arrêter toute caméra existante
-  stopAllCameras();
-  
   scanning = true;
   if (scanBtn) scanBtn.style.display = 'none';
   if (cameraView) cameraView.classList.add('active');
@@ -1369,97 +1331,60 @@ const qrData = JSON.stringify({
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   
   navigator.mediaDevices.getUserMedia({ 
-    video: { 
-      facingMode: 'environment',
-      width: { ideal: 1280 },
-      height: { ideal: 720 }
-    }
+    video: { facingMode: 'environment' }
   }).then(stream => {
     video.srcObject = stream;
+    video.play();
     
-    // Attendre que la vidéo soit prête
-    video.onloadedmetadata = () => {
-      video.play().then(() => {
-        console.log('✅ Caméra démarrée - Dimensions:', video.videoWidth, 'x', video.videoHeight);
-        
-        // Démarrer la boucle de scan après un petit délai
-        setTimeout(() => {
-          scanFrame();
-        }, 500);
-      }).catch(e => {
-        console.error('Erreur lecture vidéo:', e);
-        showError('Erreur de démarrage caméra');
-      });
-    };
-    
-    function scanFrame() {
+    const scan = () => {
       if (!scanning) return;
       
-      try {
-        // Vérifier que la vidéo a des dimensions valides
-        if (video.videoWidth > 0 && video.videoHeight > 0) {
-          // Ajuster le canvas aux dimensions de la vidéo
-          if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            console.log('📐 Canvas redimensionné:', canvas.width, 'x', canvas.height);
-          }
-          
-          // Dessiner l'image vidéo sur le canvas
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          
-          // Récupérer les données d'image
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          
-          // Essayer de détecter un QR code
-          const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: 'dontInvert',
-          });
-          
-          if (code) {
-            console.log('🎯 QR Code détecté:', code.data);
+      if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'attemptBoth',
+        });
+        
+        if (code && code.data) {
+          console.log('✅ QR détecté:', code.data);
+          try {
+            const parsedData = JSON.parse(code.data);
+            console.log('✅ QR parsé:', parsedData);
             
-            try {
-              const parsedData = JSON.parse(code.data);
-              
-              if (parsedData.id && parsedData.lat && parsedData.lon) {
-                console.log('✅ QR Code valide - ID:', parsedData.id);
-                
-                let handled = false;
-                if (type === 'game') {
-                  handled = handleGameScan(parsedData);
-                } else if (type === 'positioning') {
-                  handled = handlePositioningScan(parsedData);
-                } else {
-                  handled = addParticipant(parsedData);
-                }
-                
-                if (handled) {
-                  // Ajouter un feedback visuel et sonore
-                  showSuccess('✅ Code scanné avec succès !');
-                  stopAllCameras();
-                  return;
-                }
+            if (parsedData.id && parsedData.lat && parsedData.lon) {
+              let handled = false;
+              if (type === 'game') {
+                handled = handleGameScan(parsedData);
+              } else if (type === 'positioning') {
+                handled = handlePositioningScan(parsedData);
               } else {
-                console.log('❌ QR Code invalide - données manquantes');
+                handled = addParticipant(parsedData);
               }
-            } catch (e) {
-              console.log('❌ Données QR code non valides JSON:', e);
+              
+              if (handled) {
+                stopAllCameras();
+              }
+              return;
+            } else {
+              console.warn('⚠️ QR incomplet:', parsedData);
             }
+          } catch (e) {
+            console.error('❌ Erreur parsing:', e.message, '| Data:', code.data);
           }
         }
-      } catch (error) {
-        console.error('❌ Erreur dans scanFrame:', error);
       }
       
-      // Continuer la boucle
-      if (scanning) {
-        animationFrameId = requestAnimationFrame(scanFrame);
-      }
-    }
+      animationFrameId = requestAnimationFrame(scan);
+    };
     
+    animationFrameId = requestAnimationFrame(scan);
   }).catch(e => {
-    console.error('❌ Erreur accès caméra:', e);
+    console.error('❌ Erreur caméra:', e);
     showError('Erreur caméra: ' + e.message);
     stopAllCameras();
   });
