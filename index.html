@@ -583,40 +583,26 @@
     </div>
 
     <!-- Étape 4 : Positionnement sur la carte -->
-    <div id="step4" class="step">
-      <h2>🗺️ Placez-vous sur la carte</h2>
-      
-      <div class="positioning-instructions">
-        <p>📍 Des QR codes sont disposés dans la salle</p>
-        <p>👥 Scannez-les (et/ou vos voisins) pour vous repérer</p>
-        <p>📐 Positionnez-vous approximativement selon les distances</p>
-      </div>
-      
-      <div id="referenceScans">
-        <h3>📏 Vos repères :</h3>
-        <div id="scansList"></div>
-      </div>
-      
-      <div class="camera-view" id="positioningCameraView">
-        <div class="camera-container">
-          <video id="positioningVideo" autoplay playsinline muted></video>
-        </div>
-        <div class="camera-controls">
-          <button id="positioningStopScanBtn" style="background: #ff6b6b;" onclick="stopAllCameras()">🛑 Arrêter la caméra</button>
-        </div>
-      </div>
-      
-      <button id="positioningScanBtn" class="scan-animation" onclick="startScanLoop('positioning')">📱 Scanner un repère</button>
-      
-      <div class="positioning-stats">
-        <p>✅ <span id="positionedCount">0</span> personnes positionnées</p>
-      </div>
-      
-      <div class="navigation-buttons">
-        <button onclick="showStep(3)">⬅️ Retour</button>
-        <button onclick="showStep(5)" class="continue-btn">➡️ Je suis bien placé, continuer</button>
-      </div>
-    </div>
+<div id="step4" class="step">
+  <h2>🗺️ Placez-vous sur la carte</h2>
+  
+  <div class="positioning-instructions">
+    <p>📍 Des QR codes de repère sont disposés dans la salle</p>
+    <p>👥 Scannez les autres participants pour connaître les distances</p>
+    <p>📐 Positionnez-vous approximativement en vous repérant</p>
+  </div>
+  
+  <div class="qrcode-container">
+    <p>Votre code (pour que les autres vous scannent) :</p>
+    <div id="qrcodeStep4"></div>
+  </div>
+  
+  <div class="navigation-buttons">
+    <button onclick="showStep(3)">⬅️ Retour</button>
+    <button onclick="showStep(2)">📱 Scanner d'autres participants</button>
+    <button onclick="showStep(5)" class="continue-btn">✅ Je suis bien placé</button>
+  </div>
+</div>
 
     <!-- Étape 5 : Chronomètre collectif -->
     <div id="step5" class="step">
@@ -1026,11 +1012,16 @@ function restoreUserData() {
       if (stepNumber === 3) {
         initGame();
       }
+
+      
       
       if (stepNumber === 2) {
         setTimeout(() => genMyQRCode('qrcode'), 100);
       } else if (stepNumber === 3) {
         setTimeout(() => genMyQRCode('qrcodeStep3'), 100);
+      } else if (stepNumber === 4) {
+        setTimeout(() => genMyQRCode('qrcodeStep4'), 100);
+      }
       } else if (stepNumber === 5) {
         const userTime = localStorage.getItem('departureTime') || myDepartureTime;
         if ($('userDepartureDisplay')) {
