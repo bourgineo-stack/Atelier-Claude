@@ -780,7 +780,7 @@
     let participants = [];
     let scanning = false;
     let animationFrameId = null;
-    let MIN_PARTICIPANTS_REQUIRED = 20;
+    let MIN_PARTICIPANTS_REQUIRED = 1;
     document.getElementById('minParticipantsRequiredDisplay').textContent = MIN_PARTICIPANTS_REQUIRED;
     
     let gameTargets = [];
@@ -1331,10 +1331,16 @@ function restoreUserData() {
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   
   navigator.mediaDevices.getUserMedia({ 
-    video: { facingMode: 'environment' }
-  }).then(stream => {
-    video.srcObject = stream;
-    video.play();
+  video: { facingMode: 'environment' }
+}).then(stream => {
+  video.srcObject = stream;
+  
+  // Attendre que la vidéo soit prête avant de lancer play()
+  video.onloadedmetadata = () => {
+    video.play().catch(e => {
+      console.warn('Play interrompu (normal si changement rapide de page):', e.message);
+    });
+  };
     
     const scan = () => {
       if (!scanning) return;
