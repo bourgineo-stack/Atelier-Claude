@@ -1273,85 +1273,106 @@
     }
 
     function startScanLoop(type = 'normal') {
-      const videoId = type === 'game' ? 'gameVideo' : type === 'positioning' ? 'positioningVideo' : 'video';
-      const canvasId = type === 'game' ? 'gameCanvas' : type === 'positioning' ? 'positioningCanvas' : 'canvas';
-      const cameraViewId = type === 'game' ? 'gameCameraView' : type === 'positioning' ? 'positioningCameraView' : 'cameraView';
-      const scanBtnId = type === 'game' ? 'gameScanBtn' : type === 'positioning' ? 'positioningScanBtn' : 'scanBtn';
+  const videoId = type === 'game' ? 'gameVideo' : type === 'positioning' ? 'positioningVideo' : 'video';
+  const canvasId = type === 'game' ? 'gameCanvas' : type === 'positioning' ? 'positioningCanvas' : 'canvas';
+  const cameraViewId = type === 'game' ? 'gameCameraView' : type === 'positioning' ? 'positioningCameraView' : 'cameraView';
+  const scanBtnId = type === 'game' ? 'gameScanBtn' : type === 'positioning' ? 'positioningScanBtn' : 'scanBtn';
+  
+  const video = $(videoId);
+  const canvas = $(canvasId);
+  const cameraView = $(cameraViewId);
+  const scanBtn = $(scanBtnId);
+  
+  if (!video || !canvas) {
+    showError('Éléments caméra non trouvés');
+    return;
+  }
+  
+  scanning = true;
+  if (scanBtn) scanBtn.style.display = 'none';
+  if (cameraView) cameraView.classList.add('active');
+  
+  const ctx = canvas.getContext('2d');
+  
+  // Contraintes de caméra plus souples
+  const constraints = {
+    video: {
+      facingMode: { ideal: 'environment' }, // ← Changé de 'environment' à { ideal: 'environment' }
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    }
+  };
+  
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then(stream => {
+      video.srcObject = stream;
+      video.setAttribute('playsinline', true); // ← Important pour iOS
+      video.play();
       
-      const video = $(videoId);
-      const canvas = $(canvasId);
-      const cameraView = $(cameraViewId);
-      const scanBtn = $(scanBtnId);
+      // Attendre que la vidéo soit prête
+      video.addEventListener('loadedmetadata', () => {
+        console.log('Vidéo chargée, dimensions:', video.videoWidth, 'x', video.videoHeight);
+      });
       
-      if (!video || !canvas) {
-        showError('Éléments caméra non trouvés');
-        return;
-      }
-      
-      scanning = true;
-      if (scanBtn) scanBtn.style.display = 'none';
-      if (cameraView) cameraView.classList.add('active');
-      
-      const ctx = canvas.getContext('2d');
-      
-      navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' }
-      }).then(stream => {
-        video.srcObject = stream;
-        video.play();
+      const scan = () => {
+        if (!scanning) return;
         
-        const scan = () => {
-          if (!scanning) return;
+        if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
+          // Ajuster le canvas aux dimensions de la vidéo
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
           
-          if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          
+          try {
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: 'attemptBoth', // ← Changé de 'dontInvert' à 'attemptBoth'
+            });
             
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            
-            try {
-              const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                inversionAttempts: 'dontInvert',
-              });
-              
-              if (code) {
-                try {
-                  const parsedData = JSON.parse(code.data);
-                  
-                  if (parsedData.id && parsedData.lat && parsedData.lon) {
-                    let handled = false;
-                    if (type === 'game') {
-                      handled = handleGameScan(parsedData);
-                    } else if (type === 'positioning') {
-                      handled = handlePositioningScan(parsedData);
-                    } else {
-                      handled = addParticipant(parsedData);
-                    }
-                    
-                    if (handled) {
-                      stopAllCameras();
-                    }
-                    return;
+            if (code && code.data) {
+              console.log('QR code détecté:', code.data); // ← Debug
+              try {
+                const parsedData = JSON.parse(code.data);
+                
+                if (parsedData.id && parsedData.lat && parsedData.lon) {
+                  let handled = false;
+                  if (type === 'game') {
+                    handled = handleGameScan(parsedData);
+                  } else if (type === 'positioning') {
+                    handled = handlePositioningScan(parsedData);
+                  } else {
+                    handled = addParticipant(parsedData);
                   }
-                } catch (e) {
-                  console.log('QR code invalide');
+                  
+                  if (handled) {
+                    stopAllCameras();
+                  }
+                  return;
                 }
+              } catch (e) {
+                console.log('QR code non JSON ou invalide:', e);
               }
-            } catch (error) {
-              console.log('Erreur analyse QR:', error);
             }
+          } catch (error) {
+            console.error('Erreur analyse QR:', error);
           }
-          
-          animationFrameId = requestAnimationFrame(scan);
-        };
+        }
         
         animationFrameId = requestAnimationFrame(scan);
-      }).catch(e => {
-        showError('Erreur accès caméra: ' + e.message);
-        stopAllCameras();
-      });
-    }
+      };
+      
+      // Démarrer le scan après un court délai
+      setTimeout(() => {
+        animationFrameId = requestAnimationFrame(scan);
+      }, 500);
+      
+    }).catch(e => {
+      console.error('Erreur détaillée caméra:', e);
+      showError('Erreur accès caméra: ' + e.message + ' - Vérifiez les permissions');
+      stopAllCameras();
+    });
+}
 
     function calculateCollectiveStats() {
       const transportCounts = {
