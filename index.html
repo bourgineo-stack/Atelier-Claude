@@ -795,6 +795,36 @@
     let timerPausedAt = null;
     let inviteCountdownInterval = null;
 
+    // Fonction pour restaurer les données au chargement
+function restoreUserData() {
+  console.log('🔄 Restauration des données utilisateur...');
+  
+  // Restaurer l'ID unique
+  myUniqueId = localStorage.getItem('myUniqueId');
+  if (!myUniqueId) {
+    myUniqueId = generateUniqueId();
+    localStorage.setItem('myUniqueId', myUniqueId);
+  }
+  
+  // Restaurer les coordonnées
+  const savedCoords = localStorage.getItem('userCoords');
+  if (savedCoords) {
+    myCoords = JSON.parse(savedCoords);
+    console.log('📍 Coordonnées restaurées:', myCoords);
+  }
+  
+  // Restaurer les autres données
+  myTransportMode = localStorage.getItem('transportMode') || '';
+  myDepartureTime = localStorage.getItem('departureTime') || '07:30';
+  
+  console.log('✅ Données restaurées:', {
+    myUniqueId,
+    myCoords, 
+    myTransportMode,
+    myDepartureTime
+  });
+}
+
     const miniChallenges = [
       {
         title: "🤝 Connecteurs",
