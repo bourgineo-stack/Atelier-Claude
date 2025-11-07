@@ -1648,74 +1648,83 @@
       const resetGameBtn = $('resetGameBtn');
       
       if (saveLocationBtn) {
-        saveLocationBtn.addEventListener('click', async () => {
-          const userAddress = $('userAddress');
-          const transportMode = $('transportMode');
-          const departureTime = $('departureTime');
-          
-          if (!userAddress) {
-            showError('Champ adresse non trouvé');
-            return;
-          }
-          
-          const location = userAddress.value.trim();
-          const transport = transportMode.value;
-          const departure = departureTime.value;
-          
-          if (!location) {
-            showError('Entrez votre localisation');
-            return;
-          }
-          
-          if (!transport) {
-            showError('Sélectionnez votre mode de transport');
-            return;
-          }
-          
-          try {
-  const res = await geocode(location);
-  
-  // Récupérer ou générer l'ID une seule fois
-  if (!myUniqueId) {
-    myUniqueId = localStorage.getItem('myUniqueId');
-    if (!myUniqueId) {
-      myUniqueId = generateUniqueId();
-      localStorage.setItem('myUniqueId', myUniqueId);
+  saveLocationBtn.addEventListener('click', async () => {
+    const userAddress = $('userAddress');
+    const transportMode = $('transportMode');
+    const departureTime = $('departureTime');
+    
+    if (!userAddress) {
+      showError('Champ adresse non trouvé');
+      return;
     }
-  }
-  
-  myCoords = { 
-    lat: res.lat, 
-    lon: res.lon
-  };
-            myFullAddress = res.fullAddress;
-            myTransportMode = transport;
-            myDepartureTime = departure;
-            
-            localStorage.setItem('departureTime', departure);
-            localStorage.setItem('transportMode', transport);
-            
-            const locationSection = $('locationSection');
-            const afterLocationSection = $('afterLocationSection');
-            
-            if (locationSection && afterLocationSection) {
-              locationSection.style.display = 'none';
-              afterLocationSection.style.display = 'block';
-            }
-            
-            const detectedAddress = $('detectedAddress');
-            if (detectedAddress) {
-              detectedAddress.textContent = res.fullAddress;
-            }
-            
-            genMyQRCode();
-            showSuccess(`✅ Localisation enregistrée !`);
-            
-          } catch (e) {
-            showError('Erreur: ' + e.message);
-          }
-        });
+    
+    const location = userAddress.value.trim();
+    const transport = transportMode.value;
+    const departure = departureTime.value;
+    
+    if (!location) {
+      showError('Entrez votre localisation');
+      return;
+    }
+    
+    if (!transport) {
+      showError('Sélectionnez votre mode de transport');
+      return;
+    }
+    
+    try {
+      const res = await geocode(location);
+      
+      // GARANTIR que l'ID est conservé
+      if (!myUniqueId) {
+        myUniqueId = localStorage.getItem('myUniqueId');
+        if (!myUniqueId) {
+          myUniqueId = generateUniqueId();
+          localStorage.setItem('myUniqueId', myUniqueId);
+        }
       }
+      
+      myCoords = { 
+        lat: res.lat, 
+        lon: res.lon
+      };
+      myFullAddress = res.fullAddress;
+      myTransportMode = transport;
+      myDepartureTime = departure;
+      
+      // SAUVEGARDER les coordonnées dans localStorage
+      localStorage.setItem('userCoords', JSON.stringify(myCoords));
+      localStorage.setItem('departureTime', departure);
+      localStorage.setItem('transportMode', transport);
+      
+      console.log('💾 Données sauvegardées:', {
+        myUniqueId, 
+        myCoords, 
+        myTransportMode, 
+        myDepartureTime 
+      });
+      
+      const locationSection = $('locationSection');
+      const afterLocationSection = $('afterLocationSection');
+      
+      if (locationSection && afterLocationSection) {
+        locationSection.style.display = 'none';
+        afterLocationSection.style.display = 'block';
+      }
+      
+      const detectedAddress = $('detectedAddress');
+      if (detectedAddress) {
+        detectedAddress.textContent = res.fullAddress;
+      }
+      
+      genMyQRCode();
+      showSuccess(`✅ Localisation enregistrée !`);
+      
+    } catch (e) {
+      showError('Erreur: ' + e.message);
+    }
+  });
+}
       
       if (scanBtn) {
         scanBtn.addEventListener('click', () => startScanLoop('normal'));
