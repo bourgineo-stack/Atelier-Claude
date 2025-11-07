@@ -1299,6 +1299,13 @@
   }).then(stream => {
     video.srcObject = stream;
     video.play();
+    setTimeout(() => {
+  console.log('=== DIAGNOSTIC ===');
+  console.log('Video ready state:', video.readyState);
+  console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+  console.log('Scanning:', scanning);
+  console.log('==================');
+}, 2000);
     
     const scan = () => {
       if (!scanning) return;
