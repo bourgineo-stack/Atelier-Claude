@@ -1668,6 +1668,7 @@ function restoreUserData() {
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+      restoreUserData(); // ← CETTE LIGNE AU DÉBUT
       const saveLocationBtn = $('saveLocation');
       const scanBtn = $('scanBtn');
       const stopScanBtn = $('stopScanBtn');
