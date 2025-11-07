@@ -1292,7 +1292,7 @@
   if (scanBtn) scanBtn.style.display = 'none';
   if (cameraView) cameraView.classList.add('active');
   
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   
   // Contraintes de caméra plus souples
   const constraints = {
