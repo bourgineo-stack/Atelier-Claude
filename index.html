@@ -1273,6 +1273,8 @@
     }
 
     function startScanLoop(type = 'normal') {
+  console.log('🚀 Démarrage scan - Type:', type);
+  
   const videoId = type === 'game' ? 'gameVideo' : type === 'positioning' ? 'positioningVideo' : 'video';
   const canvasId = type === 'game' ? 'gameCanvas' : type === 'positioning' ? 'positioningCanvas' : 'canvas';
   const cameraViewId = type === 'game' ? 'gameCameraView' : type === 'positioning' ? 'positioningCameraView' : 'cameraView';
@@ -1288,6 +1290,9 @@
     return;
   }
   
+  // Arrêter toute caméra existante
+  stopAllCameras();
+  
   scanning = true;
   if (scanBtn) scanBtn.style.display = 'none';
   if (cameraView) cameraView.classList.add('active');
@@ -1295,39 +1300,62 @@
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   
   navigator.mediaDevices.getUserMedia({ 
-    video: { facingMode: 'environment' }
+    video: { 
+      facingMode: 'environment',
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    }
   }).then(stream => {
     video.srcObject = stream;
-    video.play();
-    setTimeout(() => {
-  console.log('=== DIAGNOSTIC ===');
-  console.log('Video ready state:', video.readyState);
-  console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
-  console.log('Scanning:', scanning);
-  console.log('==================');
-}, 2000);
     
-    const scan = () => {
+    // Attendre que la vidéo soit prête
+    video.onloadedmetadata = () => {
+      video.play().then(() => {
+        console.log('✅ Caméra démarrée - Dimensions:', video.videoWidth, 'x', video.videoHeight);
+        
+        // Démarrer la boucle de scan après un petit délai
+        setTimeout(() => {
+          scanFrame();
+        }, 500);
+      }).catch(e => {
+        console.error('Erreur lecture vidéo:', e);
+        showError('Erreur de démarrage caméra');
+      });
+    };
+    
+    function scanFrame() {
       if (!scanning) return;
       
-      if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        
-        try {
+      try {
+        // Vérifier que la vidéo a des dimensions valides
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          // Ajuster le canvas aux dimensions de la vidéo
+          if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            console.log('📐 Canvas redimensionné:', canvas.width, 'x', canvas.height);
+          }
+          
+          // Dessiner l'image vidéo sur le canvas
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          // Récupérer les données d'image
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          
+          // Essayer de détecter un QR code
           const code = jsQR(imageData.data, imageData.width, imageData.height, {
             inversionAttempts: 'dontInvert',
           });
           
           if (code) {
-            console.log('QR détecté:', code.data);
+            console.log('🎯 QR Code détecté:', code.data);
+            
             try {
               const parsedData = JSON.parse(code.data);
               
               if (parsedData.id && parsedData.lat && parsedData.lon) {
+                console.log('✅ QR Code valide - ID:', parsedData.id);
+                
                 let handled = false;
                 if (type === 'game') {
                   handled = handleGameScan(parsedData);
@@ -1338,24 +1366,31 @@
                 }
                 
                 if (handled) {
+                  // Ajouter un feedback visuel et sonore
+                  showSuccess('✅ Code scanné avec succès !');
                   stopAllCameras();
+                  return;
                 }
-                return;
+              } else {
+                console.log('❌ QR Code invalide - données manquantes');
               }
             } catch (e) {
-              console.log('QR invalide');
+              console.log('❌ Données QR code non valides JSON:', e);
             }
           }
-        } catch (error) {
-          console.log('Erreur scan:', error);
         }
+      } catch (error) {
+        console.error('❌ Erreur dans scanFrame:', error);
       }
       
-      animationFrameId = requestAnimationFrame(scan);
-    };
+      // Continuer la boucle
+      if (scanning) {
+        animationFrameId = requestAnimationFrame(scanFrame);
+      }
+    }
     
-    animationFrameId = requestAnimationFrame(scan);
   }).catch(e => {
+    console.error('❌ Erreur accès caméra:', e);
     showError('Erreur caméra: ' + e.message);
     stopAllCameras();
   });
