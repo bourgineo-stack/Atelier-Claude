@@ -1619,12 +1619,21 @@
           }
           
           try {
-            const res = await geocode(location);
-            myUniqueId = generateUniqueId();
-            myCoords = { 
-              lat: res.lat, 
-              lon: res.lon
-            };
+  const res = await geocode(location);
+  
+  // Récupérer ou générer l'ID une seule fois
+  if (!myUniqueId) {
+    myUniqueId = localStorage.getItem('myUniqueId');
+    if (!myUniqueId) {
+      myUniqueId = generateUniqueId();
+      localStorage.setItem('myUniqueId', myUniqueId);
+    }
+  }
+  
+  myCoords = { 
+    lat: res.lat, 
+    lon: res.lon
+  };
             myFullAddress = res.fullAddress;
             myTransportMode = transport;
             myDepartureTime = departure;
