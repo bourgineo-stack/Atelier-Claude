@@ -1021,7 +1021,6 @@ function restoreUserData() {
         setTimeout(() => genMyQRCode('qrcodeStep3'), 100);
       } else if (stepNumber === 4) {
         setTimeout(() => genMyQRCode('qrcodeStep4'), 100);
-      }
       } else if (stepNumber === 5) {
         const userTime = localStorage.getItem('departureTime') || myDepartureTime;
         if ($('userDepartureDisplay')) {
