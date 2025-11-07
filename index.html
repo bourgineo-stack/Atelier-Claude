@@ -914,37 +914,68 @@
       }
     }
 
-    function genMyQRCode(targetElementId = 'qrcode') {
-      const qrcodeElement = $(targetElementId);
-      if (!qrcodeElement) {
-        showError('Élément QR code non trouvé: ' + targetElementId);
-        return;
-      }
-      
-      qrcodeElement.innerHTML = '';
-      
-      const qrData = JSON.stringify({
-        id: myUniqueId,
-        lat: myCoords.lat,
-        lon: myCoords.lon,
-        transport: myTransportMode,
-        emoji: participantNicknames[Math.floor(Math.random() * participantNicknames.length)]
-      });
-      
-      try {
-        new QRCode(qrcodeElement, {
-          text: qrData,
-          width: 180,
-          height: 180,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.L
-        });
-      } catch (error) {
-        showError("Erreur génération QR code: " + error.message);
+   function genMyQRCode(targetElementId = 'qrcode') {
+  console.log('🔍 DEBUG genMyQRCode - Début');
+  console.log('myUniqueId:', myUniqueId);
+  console.log('myCoords:', myCoords);
+  console.log('myTransportMode:', myTransportMode);
+  
+  const qrcodeElement = $(targetElementId);
+  if (!qrcodeElement) {
+    showError('Élément QR code non trouvé: ' + targetElementId);
+    return;
+  }
+  
+  qrcodeElement.innerHTML = '';
+  
+  // VÉRIFIER QUE TOUTES LES DONNÉES SONT PRÉSENTES
+  if (!myUniqueId || !myCoords || !myCoords.lat || !myCoords.lon) {
+    console.error('❌ Données manquantes pour QR code:');
+    console.error('- myUniqueId:', myUniqueId);
+    console.error('- myCoords:', myCoords);
+    
+    // Régénérer l'ID si manquant
+    if (!myUniqueId) {
+      myUniqueId = localStorage.getItem('myUniqueId') || generateUniqueId();
+      localStorage.setItem('myUniqueId', myUniqueId);
+      console.log('🆕 myUniqueId régénéré:', myUniqueId);
+    }
+    
+    // Si les coordonnées manquent, essayer de les récupérer
+    if (!myCoords) {
+      const savedCoords = localStorage.getItem('userCoords');
+      if (savedCoords) {
+        myCoords = JSON.parse(savedCoords);
+        console.log('📍 Coordonnées restaurées:', myCoords);
       }
     }
-
+  }
+  
+  const qrData = JSON.stringify({
+    id: myUniqueId,
+    lat: myCoords.lat,
+    lon: myCoords.lon,
+    transport: myTransportMode,
+    emoji: participantNicknames[Math.floor(Math.random() * participantNicknames.length)]
+  });
+  
+  console.log('📦 Données QR code générées:', qrData);
+  
+  try {
+    new QRCode(qrcodeElement, {
+      text: qrData,
+      width: 180,
+      height: 180,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.L
+    });
+    console.log('✅ QR code généré avec succès');
+  } catch (error) {
+    console.error('❌ Erreur génération QR code:', error);
+    showError("Erreur génération QR code: " + error.message);
+  }
+}
     function genInviteQRCode() {
       const inviteQrcode = $('inviteQrcode');
       if (!inviteQrcode) return;
@@ -1272,19 +1303,6 @@
         inviteCountdownInterval = null;
       }
     }
-
-    // AJOUTEZ ICI LA FONCTION DEBUG
-function debugCamera() {
-  const video = $('video') || $('gameVideo') || $('positioningVideo');
-  if (video && video.srcObject) {
-    console.log('=== DEBUG CAMERA ===');
-    console.log('Video readyState:', video.readyState);
-    console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
-    console.log('Video playing:', !video.paused);
-    console.log('Scanning active:', scanning);
-    console.log('====================');
-  }
-}
 
     function startScanLoop(type = 'normal') {
   console.log('🚀 Démarrage scan - Type:', type);
