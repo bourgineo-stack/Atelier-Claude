@@ -981,13 +981,20 @@ function restoreUserData() {
     }
   }
   
-  const qrData = JSON.stringify({
-    id: myUniqueId,
-    lat: myCoords.lat,
-    lon: myCoords.lon,
-    transport: myTransportMode,
-    emoji: participantNicknames[Math.floor(Math.random() * participantNicknames.length)]
-  });
+  // Générer un emoji fixe basé sur l'ID
+if (!localStorage.getItem('myEmoji')) {
+  const emojiIndex = parseInt(myUniqueId.charCodeAt(0)) % participantNicknames.length;
+  localStorage.setItem('myEmoji', participantNicknames[emojiIndex]);
+}
+const myEmoji = localStorage.getItem('myEmoji');
+
+const qrData = JSON.stringify({
+  id: myUniqueId,
+  lat: myCoords.lat,
+  lon: myCoords.lon,
+  transport: myTransportMode,
+  emoji: myEmoji
+});
   
   console.log('📦 Données QR code générées:', qrData);
   
